@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="max-w-5xl mx-auto space-y-6">
+
+
+<!-- HEADER -->
+<div>
+    <h1 class="text-3xl font-bold text-slate-800">DPL Management</h1>
+    <p class="text-gray-500">Coordinate Data Product Lists</p>
+</div>
+
+<!-- CARD -->
+<div class="bg-white rounded-2xl shadow p-6">
+
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <div>
+            <p class="text-xs uppercase text-gray-400">File ingestion</p>
+            <h3 class="text-xl font-bold">Excel Data Import</h3>
+        </div>
+
+        <!-- UPLOAD -->
+        <div class="border-2 border-dashed rounded-xl p-10 text-center">
+
+            <span class="material-symbols-outlined text-5xl text-gray-400 mb-3">
+                cloud_upload
+            </span>
+
+            <p class="font-medium">Upload DPL file</p>
+            <p class="text-sm text-gray-500 mb-4">.xlsx or .csv</p>
+
+            <input type="file" name="uploaded_file" id="fileInput" class="mx-auto">
+
+            <!-- FILE NAME -->
+            <p id="fileName" class="text-green-600 text-sm mt-3 hidden"></p>
+
+        </div>
+
+        <!-- FORM -->
+        <div class="grid grid-cols-2 gap-4">
+
+            <div>
+                <label class="text-sm font-medium">Title</label>
+                {{ form.title }}
+            </div>
+
+            <div>
+                <label class="text-sm font-medium">Factory</label>
+                {{ form.factory }}
+            </div>
+
+            <div>
+                <label class="text-sm font-medium">Season</label>
+                {{ form.season }}
+            </div>
+
+            <div>
+                <label class="text-sm font-medium">Status</label>
+                {{ form.status }}
+            </div>
+
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="flex gap-3">
+            <button name="preview"
+                    class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                Preview
+            </button>
+
+            <button name="upload"
+                    class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Upload
+            </button>
+        </div>
+
+        {% if error %}
+        <p class="text-red-600 text-sm">{{ error }}</p>
+        {% endif %}
+
+    </form>
+
+</div>
+
+<!-- SUCCESS MESSAGE -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="bg-green-50 text-green-700 px-4 py-2 rounded">
+            ✔ {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- PREVIEW TABLE -->
+{% if preview_data %}
+<div class="bg-white rounded-2xl shadow overflow-hidden">
+
+    <div class="p-4 border-b">
+        <h3 class="font-semibold">Preview Data</h3>
+    </div>
+
+    <table class="w-full text-sm">
+
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+            <th class="px-4 py-3 text-left">Style</th>
+            <th class="px-4 py-3 text-left">Joia</th>
+            <th class="px-4 py-3 text-left">Color</th>
+            <th class="px-4 py-3 text-center">Lot</th>
+            <th class="px-4 py-3 text-center">Roll</th>
+            <th class="px-4 py-3 text-right">KG</th>
+            <th class="px-4 py-3 text-right">M</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for row in preview_data %}
+        <tr class="border-t hover:bg-gray-50">
+
+            <!-- STYLE -->
+            <td class="px-4 py-3 font-semibold whitespace-nowrap">
+                {{ row.style }}
+            </td>
+
+            <!-- JOIA -->
+            <td class="px-4 py-3 font-mono text-blue-700 whitespace-nowrap">
+                {{ row.joia_code }}
+            </td>
+
+            <!-- COLOR -->
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex items-center gap-2">
+
+                    <span class="inline-block w-3 h-3 rounded-full border border-gray-300"
+                          style="background-color: {{ row.color_name|default:'#999'|lower }};">
+                    </span>
+
+                    {{ row.color_name|default:row.color_code }}
+                </div>
+            </td>
+
+            <!-- LOT -->
+            <td class="px-4 py-3 text-center whitespace-nowrap">
+                {{ row.lot }}
+            </td>
+
+            <!-- ROLL -->
+            <td class="px-4 py-3 text-center whitespace-nowrap">
+                {{ row.roll }}
+            </td>
+
+            <!-- KG -->
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+                {{ row.qty_kg }}
+            </td>
+
+            <!-- M -->
+            <td class="px-4 py-3 text-right font-bold whitespace-nowrap">
+                {{ row.qty_m }}
+            </td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+
+</div>
+{% endif %}
+
+</div>
+
+<!-- JS: Show selected file name -->
+
+<script>
+document.getElementById("fileInput").addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if(file){
+        const el = document.getElementById("fileName");
+        el.innerText = "✔ " + file.name;
+        el.classList.remove("hidden");
+    }
+});
+</script>
+
+{% endblock %}

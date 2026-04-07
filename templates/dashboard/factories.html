@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto">
+
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">Factories</h2>
+            <p class="text-sm text-gray-500">Manage your factories</p>
+        </div>
+
+        <button onclick="openModal()"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700">
+            + Add Factory
+        </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+
+        <table class="w-full table-fixed text-sm">
+
+            <colgroup>
+                <col style="width:120px">
+                <col style="width:200px">
+                <col style="width:160px">
+                <col style="width:200px">
+                <col style="width:140px">
+            </colgroup>
+
+            <thead class="bg-slate-800 text-white">
+                <tr>
+                    <th class="p-3 text-left">Code</th>
+                    <th class="p-3 text-left">Name</th>
+                    <th class="p-3 text-left">Country</th>
+                    <th class="p-3 text-left">Contact</th>
+                    <th class="p-3 text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for factory in factories %}
+                <tr class="border-b hover:bg-gray-50">
+
+                    <td class="p-2">{{ factory.code }}</td>
+                    <td class="p-2 font-medium">{{ factory.name }}</td>
+                    <td class="p-2">{{ factory.country }}</td>
+                    <td class="p-2">{{ factory.contact }}</td>
+
+                    <td class="p-2 text-center space-x-2">
+
+                        <button
+                            onclick="editFactory(this)"
+                            data-id="{{ factory.id }}"
+                            data-code="{{ factory.code }}"
+                            data-name="{{ factory.name }}"
+                            data-country="{{ factory.country }}"
+                            data-contact="{{ factory.contact }}"
+                            class="text-blue-600 hover:underline">
+                            Edit
+                        </button>
+
+                        <a href="{% url 'delete_factory' factory.id %}"
+                           class="text-red-600 hover:underline">
+                            Delete
+                        </a>
+
+                    </td>
+
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center p-4 text-gray-500">
+                        No factories found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- 🔥 MODAL -->
+<div id="factoryModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center">
+
+    <div class="bg-white rounded-xl w-full max-w-lg p-6">
+
+        <h3 class="text-lg font-bold mb-4">Factory Form</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <input type="hidden" name="factory_id" id="factory_id">
+
+            <div class="space-y-4">
+
+                <input type="number" name="code" id="factory_code"
+                    placeholder="Code"
+                    class="w-full border rounded px-3 py-2">
+
+                <input type="text" name="name" id="factory_name"
+                    placeholder="Name"
+                    class="w-full border rounded px-3 py-2">
+
+                <input type="text" name="country" id="factory_country"
+                    placeholder="Country"
+                    class="w-full border rounded px-3 py-2">
+
+                <input type="text" name="contact" id="factory_contact"
+                    placeholder="Contact"
+                    class="w-full border rounded px-3 py-2">
+
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <button type="button" onclick="closeModal()"
+                    class="px-4 py-2 border rounded">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                    class="bg-blue-600 text-white px-4 py-2 rounded">
+                    Save
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- 🔥 JS -->
+<script>
+
+function openModal(){
+    document.getElementById("factoryModal").classList.remove("hidden");
+    document.getElementById("factoryModal").classList.add("flex");
+}
+
+function closeModal(){
+    document.getElementById("factoryModal").classList.add("hidden");
+    document.getElementById("factoryModal").classList.remove("flex");
+}
+
+function editFactory(btn){
+
+    openModal();
+
+    document.getElementById("factory_id").value = btn.dataset.id;
+    document.getElementById("factory_code").value = btn.dataset.code;
+    document.getElementById("factory_name").value = btn.dataset.name;
+    document.getElementById("factory_country").value = btn.dataset.country;
+    document.getElementById("factory_contact").value = btn.dataset.contact;
+
+}
+
+</script>
+
+{% endblock %}

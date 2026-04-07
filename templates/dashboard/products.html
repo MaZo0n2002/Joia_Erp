@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="p-8 space-y-8 bg-slate-50 min-h-screen">
+
+<!-- ================= HEADER ================= -->
+<div class="flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">
+            Products Dashboard
+        </h1>
+        <p class="text-gray-500 text-sm mt-1">
+            Manage pricing, inventory and product performance
+        </p>
+    </div>
+
+    <a href="/products/add/" 
+       class="bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-xl shadow transition">
+        + Add Product
+    </a>
+</div>
+
+<!-- ================= KPI ================= -->
+<div class="grid grid-cols-3 gap-6">
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border hover:shadow-md transition">
+        <p class="text-gray-400 text-sm">Total Products</p>
+        <h2 class="text-3xl font-bold mt-2">{{ products|length }}</h2>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border hover:shadow-md transition">
+        <p class="text-gray-400 text-sm">Total Inventory</p>
+        <h2 class="text-3xl font-bold mt-2">
+            {{ total_inventory|floatformat:1 }}
+        </h2>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border hover:shadow-md transition">
+        <p class="text-gray-400 text-sm">Low Stock</p>
+        <h2 class="text-3xl font-bold mt-2 text-red-500">
+            {{ low_stock }}
+        </h2>
+    </div>
+
+</div>
+
+<!-- ================= FILTERS ================= -->
+<div class="bg-white p-4 rounded-2xl shadow border flex flex-wrap gap-4 items-center">
+
+    <!-- SEARCH -->
+    <input type="text" id="searchInput"
+           placeholder="Search product..."
+           class="border px-4 py-2 rounded-lg w-64 focus:ring-2 focus:ring-blue-300">
+
+    <!-- STOCK FILTER -->
+    <select id="stockFilter"
+            class="border px-4 py-2 rounded-lg">
+        <option value="">All Stock</option>
+        <option value="low">Low Stock</option>
+        <option value="available">Available</option>
+    </select>
+
+    <!-- UNIT FILTER -->
+    <select id="unitFilter"
+            class="border px-4 py-2 rounded-lg">
+        <option value="">All Units</option>
+        <option value="m">Meters (M)</option>
+        <option value="kg">Kilograms (KG)</option>
+    </select>
+
+    <!-- RESET -->
+    <button onclick="resetFilters()"
+            class="text-sm text-gray-500 hover:text-black">
+        Reset
+    </button>
+
+</div>
+
+<!-- ================= TABLE ================= -->
+<div class="bg-white rounded-2xl shadow border overflow-hidden">
+
+<div class="px-6 py-4 border-b flex justify-between items-center bg-slate-50">
+    <h3 class="font-semibold text-gray-700">Product Catalog</h3>
+    <span class="text-xs text-gray-400">Auto-save enabled</span>
+</div>
+
+<div class="overflow-x-auto">
+
+<table class="w-full text-sm">
+
+<thead class="bg-slate-100 text-gray-600 uppercase text-xs sticky top-0 z-10">
+<tr class="hover:bg-blue-50 transition product-row"
+    data-code="{{ item.product.joia_code|lower }}"
+    data-style="{{ item.product.style_number|lower }}"
+    data-unit="{{ item.unit }}"
+    data-available="{{ item.available }}">
+    <th class="p-4 text-left">Code</th>
+    <th class="p-4 text-left">Product</th>
+    <th class="p-4 text-center">Colors</th>
+    <th class="p-4 text-center">Selling</th>
+    <th class="p-4 text-center">Cost</th>
+    <th class="p-4 text-center">Rolls</th>
+    <th class="p-4 text-center">Sales</th>
+    <th class="p-4 text-center">Total</th>
+    <th class="p-4 text-center">Available</th>
+    <th class="p-4 text-center">Unit</th>
+</tr>
+</thead>
+
+<tbody class="divide-y">
+
+{% for item in products %}
+<tr class="hover:bg-blue-50 transition">
+
+<td class="p-4 font-bold text-blue-700">
+    {{ item.product.joia_code }}
+</td>
+
+<td class="p-4">
+    <div class="font-semibold text-gray-800">
+        {{ item.product.style_number }}
+    </div>
+    <div class="text-xs text-gray-400">
+        {{ item.product.composition|default:"-" }}
+    </div>
+</td>
+
+<td class="p-4 text-center">
+    <div class="flex justify-center gap-1">
+        {% for color in item.colors|slice:":4" %}
+            <span class="w-5 h-5 rounded-full border shadow"
+                  title="{{ color.name }}"
+                  style="background-color: {{ color.get_display_color }};">
+            </span>
+        {% endfor %}
+    </div>
+</td>
+
+<td class="p-4 text-center">
+    <input type="number"
+           step="1"
+           value="{{ item.product.selling_price }}"
+           data-id="{{ item.product.id }}"
+           data-field="selling_price"
+           class="price-input w-24 border rounded-lg px-2 py-1 text-center focus:ring-2 focus:ring-blue-300 transition">
+</td>
+
+<td class="p-4 text-center">
+    <input type="number"
+           step="1"
+           value="{{ item.product.costing_price }}"
+           data-id="{{ item.product.id }}"
+           data-field="costing_price"
+           class="price-input w-24 border rounded-lg px-2 py-1 text-center focus:ring-2 focus:ring-blue-300 transition">
+</td>
+
+<td class="p-4 text-center font-semibold">
+    {{ item.rolls }}
+</td>
+
+<td class="p-4 text-center text-blue-600 font-semibold">
+    {{ item.sold_qty|floatformat:1 }}
+</td>
+
+<td class="p-4 text-center font-semibold">
+    {% if item.unit == "kg" %}
+        {{ item.total_kg|floatformat:1 }} KG
+    {% else %}
+        {{ item.total_m|floatformat:1 }} M
+    {% endif %}
+</td>
+
+<td class="p-4 text-center">
+<span class="px-3 py-1 rounded-full text-sm font-semibold
+{% if item.available < 300 %}
+    bg-red-100 text-red-500
+{% else %}
+    bg-green-100 text-green-600
+{% endif %}
+">
+    {{ item.available|floatformat:1 }} {{ item.unit|upper }}
+</span>
+</td>
+
+<td class="p-4 text-center font-bold text-gray-700">
+    {{ item.unit|upper }}
+</td>
+
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+</div>
+
+</div>
+
+<!-- ================= JS ================= -->
+<script>
+// ================= FILTER LOGIC =================
+const searchInput = document.getElementById("searchInput");
+const stockFilter = document.getElementById("stockFilter");
+const unitFilter = document.getElementById("unitFilter");
+
+function filterTable() {
+
+    const search = searchInput.value.toLowerCase();
+    const stock = stockFilter.value;
+    const unit = unitFilter.value;
+
+    document.querySelectorAll(".product-row").forEach(row => {
+
+        const code = row.dataset.code;
+        const style = row.dataset.style;
+        const rowUnit = row.dataset.unit;
+        const available = parseFloat(row.dataset.available);
+
+        let show = true;
+
+        // 🔍 SEARCH
+        if (search && !(code.includes(search) || style.includes(search))) {
+            show = false;
+        }
+
+        // 📦 STOCK FILTER
+        if (stock === "low" && available >= 300) {
+            show = false;
+        }
+
+        if (stock === "available" && available <= 0) {
+            show = false;
+        }
+
+        // 📏 UNIT FILTER
+        if (unit && rowUnit !== unit) {
+            show = false;
+        }
+
+        row.style.display = show ? "" : "none";
+    });
+}
+
+// EVENTS
+searchInput.addEventListener("input", filterTable);
+stockFilter.addEventListener("change", filterTable);
+unitFilter.addEventListener("change", filterTable);
+
+// RESET
+function resetFilters() {
+    searchInput.value = "";
+    stockFilter.value = "";
+    unitFilter.value = "";
+    filterTable();
+}
+const UPDATE_URL = "{% url 'update_price' %}";
+
+document.querySelectorAll(".price-input").forEach(input => {
+
+    let timeout;
+
+    input.addEventListener("input", () => {
+
+        input.classList.add("bg-yellow-50");
+
+        clearTimeout(timeout);
+
+        timeout = setTimeout(() => {
+
+            const value = parseFloat(input.value);
+            const productId = input.dataset.id;
+            const field = input.dataset.field;
+
+            if (value < 0) {
+                input.classList.add("border-red-500");
+                return;
+            }
+
+            fetch(UPDATE_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCSRFToken()
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    field: field,
+                    value: value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+
+                if (data.status === "success") {
+                    input.classList.remove("bg-yellow-50");
+                    input.classList.add("bg-green-50");
+
+                    setTimeout(() => {
+                        input.classList.remove("bg-green-50");
+                    }, 800);
+                } else {
+                    input.classList.add("border-red-500");
+                }
+
+            });
+
+        }, 500);
+
+    });
+
+});
+
+function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+}
+
+</script>
+
+{% endblock %}

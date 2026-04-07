@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style>
+body {
+    font-family: Arial;
+    font-size: 12px;
+    color: #1e293b;
+}
+
+/* HEADER */
+.header {
+    border-bottom: 3px solid #0f172a;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.title {
+    font-size: 26px;
+    text-align: right;
+    font-weight: bold;
+}
+
+/* BOX */
+.box {
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+}
+
+/* TABLE */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.table th {
+    background: #0f172a;
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
+
+.table td {
+    padding: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+/* ALIGNMENT */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* TOTALS */
+.totals {
+    width: 300px;
+    float: right;
+    margin-top: 20px;
+}
+
+.totals td {
+    padding: 6px 0;
+}
+
+.grand {
+    border-top: 2px solid #0f172a;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* FOOTER */
+.footer {
+    margin-top: 50px;
+    font-size: 10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+<table class="header" width="100%">
+<tr>
+<td>
+    <div class="logo">JOIA ERP</div>
+    Industrial Area, 10th of Ramadan<br>
+    Egypt
+</td>
+
+<td class="title">
+    QUOTATION<br>
+    #{{ quotation.quotation_number }}<br>
+    {{ quotation.created_at|date:"Y-m-d" }}
+</td>
+</tr>
+</table>
+
+<!-- CUSTOMER -->
+<table width="100%">
+<tr>
+<td width="50%">
+    <div class="box">
+        <b>Customer</b><br>
+        {{ quotation.customer.name }}<br>
+        ID: {{ quotation.customer.id }}
+    </div>
+</td>
+
+<td width="50%">
+    <div class="box">
+        <b>Details</b><br>
+        Status: {{ quotation.status }}<br>
+        Items: {{ quotation.lines.count }}<br>
+        VAT: {{ quotation.vat_percentage }}%
+    </div>
+</td>
+</tr>
+</table>
+
+<!-- PRODUCTS -->
+<table class="table">
+<thead>
+<tr>
+    <th>Joia Code</th>
+    <th>Color</th>
+    <th class="text-center">Rolls</th>
+    <th class="text-center">Qty</th>
+    <th class="text-right">Unit Price</th>
+    <th class="text-right">Total</th>
+</tr>
+</thead>
+
+<tbody>
+{% for line in quotation.lines.all %}
+<tr>
+    <td><b>{{ line.joia_code }}</b></td>
+    <td>{{ line.color_name|default:"-" }}</td>
+    <td class="text-center">{{ line.rolls }}</td>
+    <td class="text-center">{{ line.qty_m }}</td>
+
+    <td class="text-right">
+        {{ line.unit_price|floatformat:2 }} EGP
+    </td>
+
+    <td class="text-right">
+        <b>{{ line.total_price|floatformat:2 }} EGP</b>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<!-- TOTALS -->
+<table class="totals">
+<tr>
+    <td>Subtotal</td>
+    <td class="text-right">{{ quotation.subtotal|floatformat:2 }} EGP</td>
+</tr>
+<tr>
+    <td>VAT ({{ quotation.vat_percentage }}%)</td>
+    <td class="text-right">{{ quotation.vat_amount|floatformat:2 }} EGP</td>
+</tr>
+<tr class="grand">
+    <td>Total</td>
+    <td class="text-right">{{ quotation.total|floatformat:2 }} EGP</td>
+</tr>
+</table>
+
+<div style="clear: both;"></div>
+
+<!-- OPTIONAL LINE -->
+<div style="border-top:2px solid #0f172a; margin-top:40px;"></div>
+
+<!-- FOOTER -->
+<div class="footer">
+
+    <table width="100%" style="margin-top:10px;">
+
+        <tr>
+
+            <!-- LEFT -->
+            <td style="color:#475569; width:33%;">
+                <b style="color:#0f172a;">JOIA ERP</b><br>
+                Industrial Area, 10th of Ramadan<br>
+                Egypt<br>
+                +20 123 456 789
+            </td>
+
+            <!-- CENTER -->
+            <td style="text-align:center; color:#64748b; width:34%;">
+                <b>Terms & Conditions</b><br>
+                Valid for 7 days<br>
+                Subject to stock availability
+            </td>
+
+            <!-- RIGHT -->
+            <td style="text-align:right; color:#64748b; width:33%;">
+                Generated: {{ quotation.created_at|date:"Y-m-d" }}<br>
+                System Generated Document<br>
+                Page 1 of 1
+            </td>
+
+        </tr>
+
+    </table>
+
+</div>
+
+</body>
+</html>

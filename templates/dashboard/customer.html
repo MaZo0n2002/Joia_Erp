@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto">
+
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">Customers</h2>
+            <p class="text-sm text-gray-500">Manage your customers</p>
+        </div>
+
+        <button onclick="openModal()"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700">
+            + Add Customer
+        </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+
+        <table class="w-full table-fixed text-sm">
+
+            <colgroup>
+                <col style="width:100px">
+                <col style="width:180px">
+                <col style="width:220px">
+                <col style="width:150px">
+                <col style="width:200px">
+                <col style="width:120px">
+            </colgroup>
+
+            <thead class="bg-slate-800 text-white">
+                <tr>
+                    <th class="p-3 text-left">Code</th>
+                    <th class="p-3 text-left">Name</th>
+                    <th class="p-3 text-left">Email</th>
+                    <th class="p-3 text-left">Phone</th>
+                    <th class="p-3 text-left">Address</th>
+                    <th class="p-3 text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for customer in customers %}
+                <tr class="border-b hover:bg-gray-50">
+
+                    <td class="p-2">{{ customer.code }}</td>
+                    <td class="p-2 font-medium">{{ customer.name }}</td>
+                    <td class="p-2">{{ customer.email }}</td>
+                    <td class="p-2">{{ customer.phone_number }}</td>
+                    <td class="p-2">{{ customer.address }}</td>
+
+                    <td class="p-2 text-center space-x-2">
+
+                        <button
+                            onclick="editCustomer(this)"
+                            data-id="{{ customer.id }}"
+                            data-code="{{ customer.code }}"
+                            data-name="{{ customer.name }}"
+                            data-email="{{ customer.email }}"
+                            data-phone="{{ customer.phone_number }}"
+                            data-address="{{ customer.address }}"
+                            class="text-blue-600 hover:underline">
+                            Edit
+                        </button>
+
+                        <a href="{% url 'delete_customer' customer.id %}"
+                           class="text-red-600 hover:underline">
+                            Delete
+                        </a>
+
+                    </td>
+
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center p-4 text-gray-500">
+                        No customers found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- 🔥 MODAL -->
+<div id="customerModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center">
+
+    <div class="bg-white rounded-xl w-full max-w-lg p-6">
+
+        <h3 class="text-lg font-bold mb-4">Customer Form</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <input type="hidden" name="customer_id" id="customer_id">
+
+            <div class="space-y-4">
+
+                <input type="number" name="code" id="customer_code"
+                    placeholder="Code"
+                    class="w-full border rounded px-3 py-2">
+
+                <input type="text" name="name" id="customer_name"
+                    placeholder="Name"
+                    class="w-full border rounded px-3 py-2">
+
+                <input type="email" name="email" id="customer_email"
+                    placeholder="Email"
+                    class="w-full border rounded px-3 py-2">
+
+                <input type="text" name="phone_number" id="customer_phone"
+                    placeholder="Phone"
+                    class="w-full border rounded px-3 py-2">
+
+                <input type="text" name="address" id="customer_address"
+                    placeholder="Address"
+                    class="w-full border rounded px-3 py-2">
+
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <button type="button" onclick="closeModal()"
+                    class="px-4 py-2 border rounded">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                    class="bg-blue-600 text-white px-4 py-2 rounded">
+                    Save
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- 🔥 JS -->
+<script>
+
+function openModal(){
+    document.getElementById("customerModal").classList.remove("hidden");
+    document.getElementById("customerModal").classList.add("flex");
+}
+
+function closeModal(){
+    document.getElementById("customerModal").classList.add("hidden");
+    document.getElementById("customerModal").classList.remove("flex");
+}
+
+function editCustomer(btn){
+
+    openModal();
+
+    document.getElementById("customer_id").value = btn.dataset.id;
+    document.getElementById("customer_code").value = btn.dataset.code;
+    document.getElementById("customer_name").value = btn.dataset.name;
+    document.getElementById("customer_email").value = btn.dataset.email;
+    document.getElementById("customer_phone").value = btn.dataset.phone;
+    document.getElementById("customer_address").value = btn.dataset.address;
+
+}
+
+</script>
+
+{% endblock %}

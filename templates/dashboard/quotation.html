@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold">Create Quotation</h2>
+
+    <a href="{% url 'manage_quotations' %}"
+       class="text-blue-600 text-sm hover:underline">
+        Manage Quotations
+    </a>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+
+    <!-- INFO -->
+    <div class="bg-white rounded-xl shadow p-6 mb-6">
+        <div class="grid grid-cols-3 gap-6">
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Quotation No</label>
+                <input type="text" value="Auto Generated"
+                       class="w-full border rounded px-3 py-2 bg-gray-100" disabled>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Customer *</label>
+                <select name="customer" required class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-200">
+                    <option value="" disabled selected>Select Customer</option>
+                    {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">VAT (%) *</label>
+                <input type="number" id="vat" name="vat_percentage"
+                       value="14" min="0" required
+                       class="w-full border rounded px-3 py-2">
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="bg-white rounded-xl shadow p-6">
+
+        <h5 class="font-semibold mb-4">Products</h5>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm border rounded-lg overflow-hidden">
+                <thead class="bg-slate-800 text-white">
+                    <tr>
+                        <th class="p-2">Product *</th>
+                        <th class="p-2">Color *</th>
+                        <th class="p-2">Rolls *</th>
+                        <th class="p-2">Qty *</th>
+                        <th class="p-2">Price *</th>
+                        <th class="p-2">Total</th>
+                        <th class="p-2">Available</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <button type="button" onclick="addRow()"
+                class="mt-3 text-blue-600 text-sm hover:underline">
+            + Add Row
+        </button>
+
+    </div>
+
+    <!-- NOTES -->
+    <div class="bg-white rounded-xl shadow p-6 mt-6">
+        <textarea name="notes" rows="3"
+                  placeholder="Notes..."
+                  class="w-full border rounded px-3 py-2"></textarea>
+    </div>
+
+    <!-- TOTALS -->
+    <div class="bg-gray-50 rounded-xl shadow p-6 mt-6 text-right">
+        <p>Subtotal: <span id="subtotal">0.00</span></p>
+        <p>VAT: <span id="vatAmount">0.00</span></p>
+        <p class="font-bold text-lg">Total: <span id="grandTotal">0.00</span></p>
+    </div>
+
+    <button type="submit"
+            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded mt-6">
+        Save
+    </button>
+
+</form>
+
+<script>
+
+const GET_COLORS_URL = "{% url 'get_colors' %}";
+const tableBody = document.getElementById("tableBody");
+
+window.onload = () => addRow();
+
+// ================= ADD ROW =================
+function addRow() {
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td>
+            <select name="joia_code[]" required class="w-full border px-2 py-1">
+                <option value="" disabled selected>Select</option>
+                {% for item in incoming_stock %}
+                    <option value="{{ item.joia_code }}">{{ item.joia_code }}</option>
+                {% endfor %}
+            </select>
+        </td>
+
+        <td>
+            <select name="color[]" required class="w-full border px-2 py-1">
+                <option value="" disabled selected>Select</option>
+            </select>
+        </td>
+
+        <td>
+            <input type="number" name="rolls[]" min="1" required
+                   class="w-full border px-2 py-1">
+        </td>
+
+        <td>
+            <input type="number" name="qty_m[]" min="1" required
+                   placeholder="Qty"
+                   class="w-full border px-2 py-1">
+        </td>
+
+        <td>
+            <input type="number" name="unit_price[]" min="0" required
+                   class="w-full border px-2 py-1">
+        </td>
+
+        <td class="row-total text-center font-semibold">0.00</td>
+
+        <td class="available text-center text-green-600 font-semibold">-</td>
+
+        <td>
+            <button type="button" class="text-red-500 font-bold">✕</button>
+        </td>
+    `;
+
+    tableBody.appendChild(row);
+    attachEvents(row);
+}
+
+// ================= EVENTS =================
+function attachEvents(row) {
+
+    const product = row.querySelector('[name="joia_code[]"]');
+    const color   = row.querySelector('[name="color[]"]');
+    const qtyInput = row.querySelector('[name="qty_m[]"]');
+    const priceInput = row.querySelector('[name="unit_price[]"]');
+    const deleteBtn = row.querySelector("button");
+
+    product.addEventListener("change", () => loadColors(product));
+    color.addEventListener("change", () => updateAvailable(color));
+
+    qtyInput.addEventListener("input", () => calculateRow(row));
+    priceInput.addEventListener("input", () => calculateRow(row));
+
+    deleteBtn.addEventListener("click", () => {
+        if (tableBody.rows.length === 1) return;
+        row.remove();
+        calculateTotals();
+    });
+}
+
+// ================= LOAD COLORS =================
+function loadColors(select) {
+
+    const row = select.closest("tr");
+    const colorSelect = row.querySelector('[name="color[]"]');
+    const priceInput = row.querySelector('[name="unit_price[]"]');
+
+    fetch(`${GET_COLORS_URL}?joia_code=${select.value}`)
+        .then(res => res.json())
+        .then(data => {
+
+            if (!data.length) {
+                colorSelect.innerHTML = `<option disabled selected>No colors available</option>`;
+                return;
+            }
+
+            let options = '<option value="" disabled selected>Select</option>';
+            let productPrice = 0;
+
+            data.forEach((item, index) => {
+
+                if (index === 0) productPrice = item.price || 0;
+
+                options += `
+                    <option 
+                        value="${item.color_name}" 
+                        data-qty="${item.total_qty}"
+                        data-unit="${item.unit}"
+                    >
+                        ${item.color_name} (${item.total_qty} ${item.unit.toUpperCase()})
+                    </option>`;
+            });
+
+            colorSelect.innerHTML = options;
+            priceInput.value = productPrice.toFixed(2);
+        });
+}
+
+// ================= AVAILABLE =================
+function updateAvailable(select) {
+
+    const row = select.closest("tr");
+    const selected = select.options[select.selectedIndex];
+
+    const qty = parseFloat(selected.getAttribute("data-qty")) || 0;
+    const unit = selected.getAttribute("data-unit") || "m";
+
+    row.dataset.available = qty;
+    row.dataset.unit = unit;
+
+    row.querySelector(".available").innerText =
+        qty + " " + unit.toUpperCase();
+
+    const qtyInput = row.querySelector('[name="qty_m[]"]');
+    qtyInput.placeholder = "Qty (" + unit.toUpperCase() + ")";
+
+    calculateRow(row);
+}
+
+// ================= CALCULATE =================
+function calculateRow(row) {
+
+    const qty   = parseFloat(row.querySelector('[name="qty_m[]"]').value) || 0;
+    const price = parseFloat(row.querySelector('[name="unit_price[]"]').value) || 0;
+    const max   = parseFloat(row.dataset.available || 0);
+
+    if (qty > max && max > 0) {
+        row.querySelector('[name="qty_m[]"]').value = max;
+    }
+
+    const total = qty * price;
+    row.querySelector(".row-total").innerText = total.toFixed(2);
+
+    calculateTotals();
+}
+
+// ================= TOTALS =================
+function calculateTotals() {
+
+    let subtotal = 0;
+
+    document.querySelectorAll(".row-total").forEach(cell => {
+        subtotal += parseFloat(cell.innerText) || 0;
+    });
+
+    const vat = parseFloat(document.getElementById("vat").value) || 0;
+    const vatAmount = subtotal * vat / 100;
+    const grand = subtotal + vatAmount;
+
+    document.getElementById("subtotal").innerText = subtotal.toFixed(2) + " EGP";
+    document.getElementById("vatAmount").innerText = vatAmount.toFixed(2) + " EGP";
+    document.getElementById("grandTotal").innerText = grand.toFixed(2) + " EGP";
+}
+
+</script>
+
+{% endblock %}

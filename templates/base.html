@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JOIA ERP</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+
+<style>
+body{
+    font-family: 'Inter', sans-serif;
+    overflow-x:hidden;
+}
+
+.submenu-collapse{
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.submenu-collapse.open{
+    max-height: 200px; /* or bigger if needed */
+}
+</style>
+
+</head>
+
+<body class="bg-slate-50">
+
+<div class="flex">
+
+<!-- 🔥 Sidebar -->
+<div class="w-64 h-screen bg-slate-900 text-white flex flex-col p-4 fixed">
+
+    <h4 class="text-xl font-bold mb-6">JOIA ERP</h4>
+
+    <a href="/" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-slate-800">
+        <span class="material-symbols-outlined">dashboard</span>
+        Dashboard
+    </a>
+
+    <a href="/products/" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-slate-800">
+        <span class="material-symbols-outlined">inventory</span>
+        Products
+    </a>
+
+    <a href="/quotations/" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-slate-800">
+        <span class="material-symbols-outlined">request_quote</span>
+        Quotations
+    </a>
+
+    <!-- Inventory -->
+    <button type="button" onclick="toggleMenu()" class="flex items-center justify-between px-3 py-2 hover:bg-slate-800 rounded w-full">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined">inventory_2</span>
+        Inventory
+    </div>
+    <span class="material-symbols-outlined">expand_more</span>
+</button>
+
+<div id="inventoryMenu" class="submenu-collapse pl-6">
+    <a href="/stock/" class="block py-2 text-sm hover:text-blue-400">Stock</a>
+    <a href="/dpl/" class="block py-2 text-sm hover:text-blue-400">DPL Upload</a>
+    <a href="/stock-movements/" class="block py-2 text-sm hover:text-blue-400">Stock Movements</a>
+</div>
+
+    <a href="/orders/" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-800 rounded">
+        <span class="material-symbols-outlined">shopping_cart</span>
+        Sales Orders
+    </a>
+
+    <a href="/customers/" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-800 rounded">
+        <span class="material-symbols-outlined">groups</span>
+        Customers
+    </a>
+
+    <a href="/factories/" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-800 rounded">
+        <span class="material-symbols-outlined">factory</span>
+        Factories
+    </a>
+
+</div>
+
+<!-- 🔥 Main Content -->
+<div class="ml-64 w-full">
+
+    <!-- Topbar -->
+    <div class="h-16 bg-white shadow flex items-center justify-between px-6">
+
+        <input type="text" placeholder="Search..." class="border rounded px-3 py-1 w-1/3">
+
+        <div class="flex items-center gap-4">
+            <span class="material-symbols-outlined">notifications</span>
+            <span>Admin</span>
+        </div>
+
+    </div>
+
+    <!-- Page Content -->
+    <div class="p-6">
+
+        {% block content %}
+        {% endblock %}
+
+    </div>
+
+</div>
+
+</div>
+
+<script>
+function toggleMenu(){
+    document.getElementById("inventoryMenu").classList.toggle("open");
+}
+</script>
+
+</body>
+</html>

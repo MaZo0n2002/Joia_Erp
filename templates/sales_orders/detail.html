@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto">
+
+    <!-- TITLE -->
+    <h2 class="text-2xl font-bold mb-4">
+        Sales Order SO-{{ order.id }}
+    </h2>
+
+    <!-- HEADER -->
+    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+        <div class="grid grid-cols-3 gap-8">
+
+            <div>
+                <p class="text-xs text-gray-400 uppercase">Customer</p>
+                <p class="text-lg font-semibold">
+                    {{ order.customer.name }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-xs text-gray-400 uppercase">Quotation</p>
+                <p class="text-lg font-semibold">
+                    QT-{{ order.quotation.quotation_number }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-xs text-gray-400 uppercase">Progress</p>
+                <p class="text-lg font-semibold">
+                    {% if is_fully_delivered %}
+                        ✅ Completed
+                    {% else %}
+                        ⏳ In Progress
+                    {% endif %}
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+
+        <table class="w-full text-sm">
+
+            <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                    <th class="p-4 text-left">Product</th>
+                    <th class="p-4 text-left">Color</th>
+                    <th class="p-4 text-right">Requested</th>
+                    <th class="p-4 text-right">Reserved</th>
+                    <th class="p-4 text-right">Delivered</th>
+                    <th class="p-4 text-right">Remaining</th>
+                    
+                    <!-- ✅ NEW -->
+                    <th class="p-4 text-right">Unit Price</th>
+
+                    <th class="p-4 text-center">State</th>
+                    <th class="p-4 text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y">
+
+                {% for line in lines %}
+                <tr class="hover:bg-gray-50">
+
+                    <td class="p-4 font-semibold">
+                        {{ line.product.joia_code }}
+                    </td>
+
+                    <td class="p-4">{{ line.color }}</td>
+
+                    <td class="p-4 text-right">
+                        {{ line.requested_qty }}
+                    </td>
+
+                    <td class="p-4 text-right text-blue-600">
+                        {{ line.reserved_qty_calc }}
+                    </td>
+
+                    <td class="p-4 text-right">
+                        {{ line.delivered_qty }}
+                    </td>
+
+                    <td class="p-4 text-right font-bold">
+                        {{ line.remaining_qty }}
+                    </td>
+
+                    <!-- ✅ UNIT PRICE EDITABLE -->
+                    <td class="p-4 text-right">
+                        <input type="number"
+                               value="{{ line.unit_price }}"
+                               step="0.01"
+                               onchange="updatePrice({{ line.id }}, this.value)"
+                               class="w-24 border rounded px-2 py-1 text-right">
+                    </td>
+
+                    <!-- STATE -->
+                    <td class="p-4 text-center">
+
+                        {% if line.remaining_qty == 0 %}
+                            <span class="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+                                Delivered
+                            </span>
+
+                        {% elif line.delivered_qty > 0 %}
+                            <span class="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded-full">
+                                Partial
+                            </span>
+
+                        {% elif line.reserved_qty_calc > 0 %}
+                            <span class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                                Ready
+                            </span>
+
+                        {% else %}
+                            <span class="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                                Waiting
+                            </span>
+                        {% endif %}
+
+                    </td>
+
+                    <!-- ACTIONS -->
+                    <td class="p-4 text-center">
+
+                        {% if line.remaining_qty > 0 %}
+
+                            <button onclick="openDeliverModal(
+                                {{ line.id }},
+                                {{ line.remaining_qty }},
+                                '{{ line.product.joia_code }}',
+                                {{ line.reserved_qty_calc }}
+                            )"
+                            class="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200">
+
+                                Deliver
+
+                            </button>
+
+                        {% else %}
+
+                            <span class="text-xs text-gray-400">✔ Done</span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- ✅ NOTES SECTION -->
+    <div class="mt-6 bg-white p-6 rounded-2xl border shadow-sm">
+        <h3 class="text-lg font-semibold mb-3">Notes</h3>
+
+        <textarea id="orderNotes"
+                  class="w-full border rounded-lg p-3"
+                  rows="3"
+                  onchange="updateNotes(this.value)">{{ order.notes }}</textarea>
+    </div>
+
+    <!-- ACTION BUTTON -->
+    <div class="mt-6 flex justify-end">
+
+        {% if is_fully_delivered %}
+
+            {% if order.invoice_id %}
+
+                <a href="{% url 'invoice_pdf' order.invoice.id %}"
+                   class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
+                   📄 Download Invoice
+                </a>
+
+            {% else %}
+
+                <button onclick="confirmOrder()"
+                    class="bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700">
+
+                    ✅ Confirm & Generate Invoice
+
+                </button>
+
+            {% endif %}
+
+        {% else %}
+
+            <p class="text-sm text-gray-500">
+                ⚠️ Complete all deliveries to generate invoice
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- JS -->
+<script>
+
+let currentLine = null;
+let maxQty = 0;
+
+function openDeliverModal(id, remaining, product, reserved) {
+    currentLine = id;
+    maxQty = remaining;
+
+    document.getElementById("modalProduct").innerText = product;
+    document.getElementById("modalRemaining").innerText = remaining + " m";
+
+    document.getElementById("deliverQty").value = remaining;
+
+    document.getElementById("deliverModal").classList.remove("hidden");
+}
+
+function closeModal() {
+    document.getElementById("deliverModal").classList.add("hidden");
+}
+function confirmOrder() {
+
+    if (!confirm("Confirm order and generate invoice?")) return;
+
+    fetch(`/orders/confirm-final/{{ order.id }}/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.error) {
+            alert(data.error);
+        } else {
+            // ✅ IMPORTANT
+            window.open(data.redirect_url, "_blank");
+        }
+
+    });
+}
+function submitDelivery() {
+
+    const qty = parseFloat(document.getElementById("deliverQty").value);
+
+    if (!qty || qty <= 0 || qty > maxQty) {
+        alert("Invalid quantity");
+        return;
+    }
+
+    fetch(`/orders/deliver/${currentLine}/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ qty: qty })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.error) {
+            alert(data.error);
+        } else {
+            location.reload(); // refresh table
+        }
+
+    });
+}
+
+function updatePrice(lineId, price) {
+    fetch(`/orders/update-price/${lineId}/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ price: price })
+    });
+}
+
+function updateNotes(notes) {
+    fetch(`/orders/update-notes/{{ order.id }}/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ notes: notes })
+    });
+}
+
+</script>
+<!-- ================= MODAL ================= -->
+<div id="deliverModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+
+    <div class="bg-white p-6 rounded-xl w-96">
+
+        <h3 class="text-lg font-bold mb-4">Deliver Product</h3>
+
+        <p class="text-sm mb-2">
+            Product: <b id="modalProduct"></b>
+        </p>
+
+        <p class="text-sm mb-4">
+            Remaining: <b id="modalRemaining"></b>
+        </p>
+
+        <input type="number" id="deliverQty"
+               class="w-full border rounded px-3 py-2 mb-4">
+
+        <div class="flex justify-end gap-2">
+            <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded">
+                Cancel
+            </button>
+
+            <button onclick="submitDelivery()" class="px-4 py-2 bg-green-600 text-white rounded">
+                Deliver
+            </button>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

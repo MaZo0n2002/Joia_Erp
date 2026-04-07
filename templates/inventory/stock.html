@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto">
+
+<!-- HEADER -->
+
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-slate-800">Inventory</h2>
+    <p class="text-sm text-gray-500">Manage your stock in real-time</p>
+</div>
+
+<!-- TABS -->
+
+<div class="flex gap-2 mb-6 border-b">
+    <button onclick="openTab(event,'actual')" class="tab-btn active-tab">Actual</button>
+    <button onclick="openTab(event,'incoming')" class="tab-btn">Incoming</button>
+    <button onclick="openTab(event,'reserved')" class="tab-btn">Reserved</button>
+</div>
+
+<!-- ================= ACTUAL ================= -->
+
+<div id="actual" class="tab-content">
+
+
+<div class="bg-white rounded-xl shadow overflow-x-auto">
+
+    <table class="w-full text-sm table-fixed">
+
+        <!-- 🔥 COLUMN WIDTH CONTROL -->
+        <colgroup>
+            <col style="width: 80px;">   <!-- DPL -->
+            <col style="width: 140px;">  <!-- Style -->
+            <col style="width: 220px;">  <!-- Composition -->
+            <col style="width: 120px;">  <!-- Joia -->
+            <col style="width: 80px;">   <!-- Color# -->
+            <col style="width: 120px;">  <!-- Color Name -->
+            <col style="width: 90px;">   <!-- Showroom -->
+            <col style="width: 60px;">   <!-- Lot -->
+            <col style="width: 60px;">   <!-- Roll -->
+            <col style="width: 70px;">   <!-- Unit -->
+            <col style="width: 100px;">  <!-- Qty -->
+        </colgroup>
+
+        <thead class="bg-slate-800 text-white">
+            <tr>
+                <th class="p-3 text-left">DPL</th>
+                <th class="p-3 text-left">Style</th>
+                <th class="p-3 text-left">Composition</th>
+                <th class="p-3 text-left">Joia Code</th>
+                <th class="p-3 text-left">COLOR#</th>
+                <th class="p-3 text-left">COLOR Name</th>
+                <th class="p-3 text-center">Showroom</th>
+                <th class="p-3 text-center">Lot</th>
+                <th class="p-3 text-center">Roll</th>
+                <th class="p-3 text-center">Unit</th>
+                <th class="p-3 text-right">Qty</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for stock in actual_stock %}
+        <tr class="border-b hover:bg-gray-50">
+
+            <td class="p-2 truncate">{{ stock.dpl.title }}</td>
+
+            <td class="p-2 font-semibold truncate">
+                {{ stock.style_number }}
+            </td>
+
+            <td class="p-2 text-gray-500 truncate">
+                {{ stock.product.composition|default:"-" }}
+            </td>
+
+            <td class="p-2 font-bold text-blue-700 truncate">
+                {{ stock.joia_code }}
+            </td>
+
+            <td class="p-2">{{ stock.color_code }}</td>
+
+            <td class="p-2 text-blue-600 font-semibold truncate">
+                {{ stock.color_name }}
+            </td>
+
+            <td class="p-2 text-center">
+                {{ stock.showroom_color }}
+            </td>
+
+            <td class="p-2 text-center">
+                {{ stock.lot_number }}
+            </td>
+
+            <td class="p-2 text-center">
+                {{ stock.roll_number }}
+            </td>
+
+            <td class="p-2 text-center font-bold">
+                {{ stock.unit|upper }}
+            </td>
+
+            <td class="p-2 text-right font-bold">
+                {% if stock.unit|lower == "kg" %}
+                    {{ stock.qty_kg }}
+                {% else %}
+                    {{ stock.qty_m }}
+                {% endif %}
+            </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="11" class="text-center p-4 text-gray-500">
+                No actual stock
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+
+</div>
+
+
+</div>
+
+
+<!-- ================= INCOMING ================= -->
+
+<div id="incoming" class="tab-content hidden">
+
+
+<!-- 🔥 TRANSFER DPL (FIXED POSITION) -->
+<form method="post" action="{% url 'transfer_dpl_stock' %}" class="mb-4 flex gap-2">
+    {% csrf_token %}
+
+    <select name="dpl_id" required class="border px-3 py-2 rounded">
+        <option value="">Select DPL</option>
+
+        {% regroup incoming_stock by obj.dpl as dpl_list %}
+        {% for group in dpl_list %}
+            <option value="{{ group.grouper.id }}">
+                {{ group.grouper.title }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit"
+            class="bg-green-600 text-white px-4 py-2 rounded">
+        Transfer
+    </button>
+</form>
+
+<div class="bg-white rounded-xl shadow overflow-x-auto">
+    <table class="w-full text-sm">
+
+        <thead class="bg-slate-800 text-white">
+            <tr>
+                <th class="p-3">DPL</th>
+                <th class="p-3">Style</th>
+                <th class="p-3">Composition</th>
+                <th class="p-3">Joia Code</th>
+                <th class="p-3">COLOR#</th>
+                <th class="p-3">COLOR Name</th>
+                <th class="p-3">Showroom</th>
+                <th class="p-3">Lot</th>
+                <th class="p-3">Roll</th>
+                <th class="p-3 text-center">Unit</th>
+                <th class="p-3 text-right">Qty</th>
+                <th class="p-3 text-right">Available</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for row in incoming_stock %}
+        <tr class="border-b">
+
+            <td class="p-2">{{ row.obj.dpl.title }}</td>
+            <td class="p-2 font-semibold">{{ row.obj.style_number }}</td>
+            <td class="p-2">{{ row.obj.product.composition|default:"-" }}</td>
+            <td class="p-2 font-bold text-blue-700">{{ row.obj.joia_code }}</td>
+            <td class="p-2">{{ row.obj.color_code }}</td>
+            <td class="p-2 text-blue-600">{{ row.obj.color_name }}</td>
+            <td class="p-2">{{ row.obj.showroom_color }}</td>
+            <td class="p-2 text-center">{{ row.obj.lot_number }}</td>
+            <td class="p-2 text-center">{{ row.obj.roll_number }}</td>
+
+            <td class="p-2 text-center font-bold">{{ row.obj.unit|upper }}</td>
+
+            <td class="p-2 text-right font-bold">
+                {% if row.obj.unit|lower == "kg" %}
+                    {{ row.obj.qty_kg }}
+                {% else %}
+                    {{ row.obj.qty_m }}
+                {% endif %}
+            </td>
+
+            <td class="p-2 text-right text-green-600 font-bold">
+                {{ row.available|floatformat:2 }}
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+</div>
+
+
+</div>
+
+</div>
+
+<script>
+function openTab(event, tabId){
+    document.querySelectorAll(".tab-content").forEach(tab=>{
+        tab.classList.add("hidden");
+    });
+
+    document.getElementById(tabId).classList.remove("hidden");
+
+    document.querySelectorAll(".tab-btn").forEach(btn=>{
+        btn.classList.remove("active-tab");
+    });
+
+    event.target.classList.add("active-tab");
+}
+</script>
+
+<style>
+.tab-btn{
+    padding: 8px 16px;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    color: #64748b;
+}
+.active-tab{
+    color: #000;
+    border-color: #2563eb;
+}
+</style>
+
+{% endblock %}
